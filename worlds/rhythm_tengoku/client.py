@@ -5,6 +5,8 @@ import asyncio
 from typing import TYPE_CHECKING
 import worlds._bizhawk as bizhawk
 
+from .utils import COORD_TO_LEVEL_ID
+
 from NetUtils import ClientStatus
 from worlds._bizhawk.client import BizHawkClient
 
@@ -42,18 +44,18 @@ class RhythmTengokuClient(BizHawkClient):
                         "status": ClientStatus.CLIENT_GOAL
                     }])
                 
-                ### DEBUGGING ###
-                result = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 1, 1, "System Bus")])
-                if result[0][0] == 1:
-                    lvlID = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 2, 1, "System Bus")])
-                    lvlState = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 3, 1, "System Bus")])
-                    await bizhawk.write(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x01, [0], "System Bus")])
-                    await bizhawk.write(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x26 + lvlID[0][0], [lvlState[0][0]], "System Bus")])
-                    await bizhawk.display_message(ctx.bizhawk_ctx, f"Level ID: {lvlID[0][0]} setting state to {lvlState[0][0]}")
-                #################
-
-                result = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x26, 1, "System Bus")])
+                result = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x22, 3, "System Bus")])
+                if result[0][2] != 0xff:
+                    await bizhawk.write(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x24, [0xff], "System Bus")])
+                    lvlID = COORD_TO_LEVEL_ID.get((result[0][0], result[0][1]), None)
+                    if lvlID is not None and result[0][2] != 0x00:
+                        if result[0][2] == 0x04:
+                            await bizhawk.write(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x26 + lvlID, [0x04], "System Bus")])
+                            #await bizhawk.display_message(ctx.bizhawk_ctx, f"Level ID: {lvlID} check gotten OK")
+                        elif result[0][2] == 0x05:
+                            await bizhawk.write(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x26 + lvlID, [0x05], "System Bus")])
+                            #await bizhawk.display_message(ctx.bizhawk_ctx, f"Level ID: {lvlID} check gotten SUPERB")
 
             except Exception as e:
-                print(f"[rhythm_tengoku] Memory read failed: {e}")
+                print(f"[rhythm_tengoku] Memory read failed: {e} at line {e.__traceback__.tb_lineno}")
             await asyncio.sleep(ctx.watcher_timeout)

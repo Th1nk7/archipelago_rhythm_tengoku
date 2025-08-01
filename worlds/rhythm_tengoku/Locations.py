@@ -65,9 +65,12 @@ level_table: List[str] = [
 _ranks: List[str] = ["OK", "SUPERB", "PERFECT"]
 
 
-# Map each level/rank combination to its Archipelago location ID.
-location_table: Dict[str, int] = {
-    f"{level} {rank}": level_id * 3 + rank_id
-    for level_id, level in enumerate(level_table)
-    for rank_id, rank in enumerate(_ranks)
-}
+location_table: Dict[str, int] = {}
+
+for level_id, level in enumerate(level_table):
+    if level == "Beat Game":
+        # Add only one entry for Beat Game
+        location_table["Beat Game"] = level_id * 3
+    else:
+        for rank_id, rank in enumerate(_ranks):
+            location_table[f"{level} {rank}"] = level_id * 3 + rank_id

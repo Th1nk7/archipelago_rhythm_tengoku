@@ -31,17 +31,29 @@ class RhythmTengokuClient(BizHawkClient):
         ctx.watcher_timeout = 0.125
 
         return True
-
+    
     async def game_watcher(self, ctx: "BizHawkClientContext") -> None:
         while True:
             try:
                 result = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR, 1, "System Bus")])
-                value = result[0][0]
-                if value == 1 and not ctx.finished_game:
+                if result[0][0] == 1 and not ctx.finished_game:
                     await ctx.send_msgs([{
                         "cmd": "StatusUpdate",
                         "status": ClientStatus.CLIENT_GOAL
                     }])
+                
+                ### DEBUGGING ###
+                result = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 1, 1, "System Bus")])
+                if result[0][0] == 1:
+                    lvlID = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 2, 1, "System Bus")])
+                    lvlState = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 3, 1, "System Bus")])
+                    await bizhawk.write(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x01, [0], "System Bus")])
+                    await bizhawk.write(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x26 + lvlID[0][0], [lvlState[0][0]], "System Bus")])
+                    await bizhawk.display_message(ctx.bizhawk_ctx, f"Level ID: {lvlID[0][0]} setting state to {lvlState[0][0]}")
+                #################
+
+                result = await bizhawk.read(ctx.bizhawk_ctx, [(self.GAME_COMPLETE_ADDR + 0x26, 1, "System Bus")])
+
             except Exception as e:
                 print(f"[rhythm_tengoku] Memory read failed: {e}")
             await asyncio.sleep(ctx.watcher_timeout)

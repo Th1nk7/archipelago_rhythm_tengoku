@@ -8,7 +8,7 @@ from .Locations import location_table
 from .Regions import create_regions
 from .Rules import set_rules
 from .Options import RhythmTengokuOptions
-from .client import RhythmTengokuClient  # required for BizHawk registration
+from .client import RhythmTengokuClient
 
 
 class RhythmTengokuWorld(World):

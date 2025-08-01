@@ -10,8 +10,8 @@ def create_regions(multiworld: MultiWorld, player: int) -> None:
     menu = Region("Menu", player, multiworld)
     game_region = Region("Rhythm Tengoku", player, multiworld)
 
-    beat_game = RhythmTengokuLocation(player, "Beat Game", location_table["Beat Game"], game_region)
-    game_region.locations.append(beat_game)
+    for name, loc_id in location_table.items():
+        game_region.locations.append(RhythmTengokuLocation(player, name, loc_id, game_region))
 
     start = Entrance(player, "Start Game", menu)
     menu.exits.append(start)

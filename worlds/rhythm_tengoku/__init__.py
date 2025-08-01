@@ -1,52 +1,42 @@
-from typing import ClassVar
+from __future__ import annotations
 
-from BaseClasses import Region, Entrance, Location, Item, ItemClassification
+from BaseClasses import Item, ItemClassification
 from worlds.AutoWorld import World
-from Options import PerGameCommonOptions
 
+from .Items import RhythmTengokuItem, item_table
+from .Locations import location_table
+from .Regions import create_regions
+from .Rules import set_rules
+from .Options import RhythmTengokuOptions
 from .client import RhythmTengokuClient  # required for BizHawk registration
 
 
-class RhythmTengokuItem(Item):
-    game: ClassVar[str] = "Rhythm Tengoku"
-
-
-class RhythmTengokuLocation(Location):
-    game: ClassVar[str] = "Rhythm Tengoku"
-
-
 class RhythmTengokuWorld(World):
+    """Minimal Archipelago world definition for Rhythm Tengoku."""
     game = "Rhythm Tengoku"
-    options_dataclass = PerGameCommonOptions
     topology_present = False
+    options_dataclass = RhythmTengokuOptions
 
-    item_name_to_id = {
-        "Beat Game": 1,
-    }
-    location_name_to_id = {
-        "Beat Game": 1,
-    }
+    item_name_to_id = item_table
+    location_name_to_id = location_table
 
     def create_item(self, name: str) -> Item:
-        return RhythmTengokuItem(name, ItemClassification.progression, self.item_name_to_id[name], self.player)
-
-    def create_regions(self) -> None:
-        menu = Region("Menu", self.player, self.multiworld)
-        game_region = Region("Rhythm Tengoku", self.player, self.multiworld)
-        self.multiworld.regions += [menu, game_region]
-
-        start_entrance = Entrance(self.player, "Start Game", menu)
-        menu.exits.append(start_entrance)
-        start_entrance.connect(game_region)
-
-        beat_game_location = RhythmTengokuLocation(self.player, "Beat Game", None, game_region)
-        game_region.locations.append(beat_game_location)
+        return RhythmTengokuItem(name, ItemClassification.progression, item_table[name], self.player)
 
     def create_items(self) -> None:
-        self.multiworld.itempool.append(self.create_item("Beat Game"))
+        for item_name in item_table:
+            self.multiworld.itempool.append(self.create_item(item_name))
+
+    def create_regions(self) -> None:
+        create_regions(self.multiworld, self.player)
 
     def set_rules(self) -> None:
+        set_rules(self.multiworld, self.player)
+
+    def generate_output(self, output_directory: str) -> None:
+        # TODO: generate patched ROM and spoiler log
         pass
 
     def fill_slot_data(self):
+        # TODO: provide slot-specific data for clients
         return {}

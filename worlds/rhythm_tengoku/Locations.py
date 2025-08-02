@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List
 from enum import Enum
 from dataclasses import dataclass
 from .Regions import Regions, RTRegion

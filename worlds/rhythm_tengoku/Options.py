@@ -93,7 +93,7 @@ class RTDeathLink(DeathLink):
     """
 
 @dataclass
-class RTOptions(PerGameCommonOptions):
+class RhythmTengokuOptions(PerGameCommonOptions):
     starting_levels: StartingLevels
     goal_levels: GoalLevels
     goal_rank: GoalRank

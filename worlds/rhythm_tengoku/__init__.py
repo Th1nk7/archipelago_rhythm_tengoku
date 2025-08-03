@@ -98,7 +98,9 @@ class RhythmTengokuWorld(World):
         for item in item_list:
             if self.item_classifications[item.type] == None:
                 continue
-            elif item.type == ItemType.Level and item.name in self.options.starting_levels.value or item.name in self.options.skipped_levels.value:
+            elif item.type == ItemType.Level and (
+                item.name in self.options.starting_levels.value
+                or item.name in self.options.skipped_levels.value):
                 continue
             elif item.type == ItemType.Filler or item.type == ItemType.Trap:
                 continue
@@ -142,7 +144,6 @@ class RhythmTengokuWorld(World):
             if loc.region.name in self.options.skipped_levels.value:
                 self.options.exclude_locations.value.add(loc.name)
 
-        # Create events for level completion
         for r in Regions.all_regions:
             name: str = f"Cleared {r.name}"
             self.event_names.append(name)
@@ -153,141 +154,32 @@ class RhythmTengokuWorld(World):
             region: Region = self.get_region(r.name)
             location: RhythmTengokuLocation = RhythmTengokuLocation(player, name, None, region)
 
-            if not r.name in self.options.goal_levels.value:
+            if not name[8:] in self.options.goal_levels.value:
                 location.place_locked_item(self.create_event("Level Completed"))
             region.locations.append(location)
 
         for goal_level in self.options.goal_levels.value:
-            victory: Location = self.get_location("Cleared " + goal_level)
-            victory.place_locked_item(self.create_event(f"Victory - {goal_level}"))
+            trophy: Location = self.get_location("Cleared " + goal_level)
+            trophy.place_locked_item(self.create_event("Trophy - " + goal_level))
+        
+        multiworld.completion_condition[player] = lambda state: state.has_all([f"Trophy - {goal_level}" for goal_level in self.options.goal_levels.value])
 
-        g_levels = list(self.options.goal_levels.value)
-        multiworld.completion_condition[player] = lambda state: all(
-            state.has(f"Victory - {g}", player) for g in g_levels
-        )
-
-        # Goal levels should have items still
-        #
-        # Victory should count for goal levels per rank required
-        #
-        # Regions are next
-            
-
-
+    def fill_slot_data(self) -> Dict[str, Any]:
+        slot_data: Dict[str, Any] = {
+            "locations": self.game_id_to_long,
+            "starting_levels": self.options.starting_levels.value,
+            "goal_levels": self.options.goal_levels.value,
+            "goal_rank": self.options.goal_rank.value,
+            "skipped_levels": self.options.skipped_levels.value,
+            "ok_rewards": bool(self.options.ok_rewards),
+            "superb_rewards": bool(self.options.superb_rewards),
+            "perfect_rewards": bool(self.options.perfect_rewards),
+            "death_link": bool(self.options.death_link),
+        }
+        return slot_data
 
 class RhythmTengokuItem(Item):
     game: str = "Rhythm Tengoku"
 
-
 class RhythmTengokuLocation(Location):
     game: str = "Rhythm Tengoku"
-
-
-
-
-
-#from BaseClasses import Region, ItemClassification, Tutorial
-#from worlds.AutoWorld import World
-#from .Items import item_table, RhythmTengokuItem
-#from .Locations import location_table, level_table, RhythmTengokuLocation
-#from .Options import RhythmTengokuOptions
-#from .Rules import set_rules
-#
-#class RhythmTengokuWorld(World):
-#    game = "Rhythm Tengoku"
-#    options_dataclass = RhythmTengokuOptions
-#    options: RhythmTengokuOptions
-#    topology_present = False
-#
-#    item_name_to_id = item_table
-#    location_name_to_id = location_table
-#    starting_inventory = {}
-#
-#    def create_items(self) -> None:
-#        start_levels = set(self.options.start_level.value)
-#        goal_levels = set(self.options.goal_levels.value)
-#        excluded_levels = set(self.options.excluded_levels.value)
-#
-#        rank_options = {
-#            0: ["OK"], 1: ["SUPERB"], 2: ["PERFECT"],
-#            3: ["OK", "SUPERB"], 4: ["OK", "PERFECT"],
-#            5: ["SUPERB", "PERFECT"], 6: ["OK", "SUPERB", "PERFECT"]
-#        }
-#        valid_ranks = rank_options.get(self.options.rank_rewards.value, ["OK", "SUPERB"])
-#        print(f"[DEBUG] Rank Rewards: {valid_ranks}")
-#
-#        start_levels -= excluded_levels
-#        goal_levels -= excluded_levels
-#
-#        removed_locations = []
-#        for loc_name in list(location_table.keys()):
-#            level_name, rank = loc_name.rsplit(" ", 1)
-#            if rank == "PERFECT" and "PERFECT" not in valid_ranks:
-#                removed_locations.append(loc_name)
-#                del location_table[loc_name]
-#        if removed_locations:
-#            print(f"[DEBUG] Removed PERFECT locations: {removed_locations}")
-#
-#        total_items = 0
-#        for level_name in level_table:
-#            if level_name in excluded_levels:
-#                continue
-#            classification = (
-#                ItemClassification.progression if level_name in goal_levels
-#                else ItemClassification.useful
-#            )
-#            item = RhythmTengokuItem(level_name, classification, item_table[level_name], self.player)
-#            if level_name in start_levels:
-#                self.multiworld.push_precollected(item)
-#            else:
-#                self.multiworld.itempool.append(item)
-#                total_items += 1
-#
-#        for loc_name in location_table:
-#            level_name, rank = loc_name.rsplit(" ", 1)
-#            if level_name in excluded_levels or rank not in valid_ranks:
-#                continue
-#            loc = self.multiworld.get_location(loc_name, self.player)
-#            loc.locked = False
-#
-#        valid_locs = [loc for loc in self.multiworld.get_locations(self.player) if loc.item is None and not loc.locked]
-#        filler_needed = max(0, len(valid_locs) - total_items)
-#        for _ in range(filler_needed):
-#            filler = RhythmTengokuItem("Blinking Trap", ItemClassification.filler, item_table["Blinking Trap"], self.player)
-#            self.multiworld.itempool.append(filler)
-#
-#        print(f"[DEBUG] Total items: {total_items}, Fillers added: {filler_needed}, Fill locations: {len(valid_locs)}")
-#
-#    def create_regions(self) -> None:
-#        menu_region = Region("Menu", self.player, self.multiworld)
-#        self.multiworld.regions.append(menu_region)
-#
-#        game_region = Region("Rhythm Tengoku", self.player, self.multiworld)
-#        for loc_name, loc_id in location_table.items():
-#            location = RhythmTengokuLocation(self.player, loc_name, loc_id, game_region)
-#            game_region.locations.append(location)
-#
-#        self.multiworld.regions.append(game_region)
-#
-#    def set_rules(self) -> None:
-#        set_rules(self.multiworld, self.player)
-#
-#    def fill_slot_data(self) -> dict:
-#        return {
-#            "goal_levels": sorted(list(set(self.options.goal_levels.value) - set(self.options.excluded_levels.value))),
-#            "goal_type": self.options.goal.value,
-#            "start_items": sorted(list(self.options.start_level.value))
-#        }
-#
-#    def generate_output(self, output_directory: str) -> None:
-#        pass
-#
-#    def create_tutorial(self) -> Tutorial:
-#        tutorial = Tutorial("Rhythm Tengoku Tutorial")
-#        tutorial.text = (
-#            "Load the patched ROM into BizHawk.\n"
-#            "Connect to Archipelago from the BizHawk client.\n"
-#            "Complete goal levels with required rank to finish."
-#        )
-#        return tutorial
-#

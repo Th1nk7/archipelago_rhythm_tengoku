@@ -1,96 +1,108 @@
-from Options import Choice, Range, Toggle, DefaultOnToggle, OptionSet
+import typing
 from dataclasses import dataclass
-from Options import OptionDict
+from Options import Choice, Range, OptionSet, Toggle, DefaultOnToggle, ItemDict, DeathLink, PerGameCommonOptions
+from .Regions import Regions
+from .Items import group_dict
 
-class ProgressionBalancing(Range):
-    """Move progression items earlier to avoid early-game bottlenecks.
-    0 = off, 99 = maximum balancing"""
-    display_name = "Progression Balancing"
-    range_start = 0
-    range_end = 99
-    default = 50
+class ItemWeights(ItemDict):
+    def __init__(self, value: typing.Dict[str, int]):
+        if any(item_count < 0 for item_count in value.values()):
+            raise Exception("Cannot have negative item counts.")
+        if all(item_count == 0 for item_count in value.values()):
+            raise Exception("At least one item count must be positive.")
+        super(ItemDict, self).__init__(value)
 
+class StartingLevels(OptionSet):
+    """
+    Levels the player starts with. Minimum 1 level must be specified.
+    """
+    display_name = "Starting Levels"
+    valid_keys = {r.name for r in Regions.all_regions}
+    default = {"Karate Man"}
 
-class Accessibility(Choice):
-    """Set item/goal reachability rules.
-    Full: all items reachable
-    Minimal: only goal-required items reachable"""
-    display_name = "Accessibility Rules"
-    option_full = 0
-    option_minimal = 1
-    default = 0
+class GoalLevels(OptionSet):
+    """
+    Levels that must be completed to win. Minimum 1 level must be specified.
+    """
+    display_name = "Goal Levels"
+    valid_keys = {r.name for r in Regions.all_regions}
+    default = {"Remix 1", "Remix 2", "Remix 3", "Remix 4", "Remix 5", "Remix 6", "Remix 7", "Remix 8"}
 
-
-class GoalType(Choice):
-    """Select goal type:
-    clear_all_goals: beat levels
-    superb_all_goals: get superb rank
-    perfect_all_goals: get perfect rank"""
-    display_name = "Goal Type"
-    option_clear_all_goals = 0
+class GoalRank(Choice):
+    """
+    Rank required on all goal levels in order to complete goal.
+    """
+    display_name = "Goal Rank"
+    option_ok_all_goals = 0
     option_superb_all_goals = 1
     option_perfect_all_goals = 2
     default = 1
 
+class SkipLevels(OptionSet):
+    """
+    Exclude level locations and items
+    """
+    display_name = "Skipped Levels"
+    valid_keys = {r.name for r in Regions.all_regions}
+    default = {"Quiz Show"}
 
-class GoalLevels(OptionSet):
-    """Set of level indices that must be completed to reach goal."""
-    display_name = "Goal Levels"
-    valid_keys = list(range(0, 49))
-    default = [41, 42, 43, 44, 45, 46, 47, 48]  # Remix levels
+class OkRewards(DefaultOnToggle):
+    """
+    Adds rewards for getting OK rank on levels.
+    """
+    display_name = "OK Rewards"
 
+class SuperbRewards(DefaultOnToggle):
+    """
+    Adds rewards for getting SUPERB rank on levels.
+    """
+    display_name = "SUPERB Rewards"
 
-class ExcludedLevels(OptionSet):
-    """Levels excluded from item pool or progression."""
-    display_name = "Excluded Levels"
-    valid_keys = list(range(0, 49))
-    default = []
+class PerfectRewards(Toggle):
+    """
+    Adds rewards for getting PERFECT rank on levels.
+    """
+    display_name = "PERFECT Rewards"
 
+class TrapPercent(Range):
+    """
+    Choose the percentage of trap items that will appear when filling the item pool with junk.
+    """
+    display_name = "Trap Item Percentage"
+    range_start = 0
+    range_end = 100
+    default = 25
 
-class StartLevel(OptionSet):
-    """Levels available at game start."""
-    display_name = "Start Level(s)"
-    valid_keys = list(range(0, 49))
-    default = [0]
+class FillerWeights(ItemWeights):
+    """Choose the odds of each filler item being created when filling the item pool with junk."""
+    display_name = "Filler Item Weights"
+    valid_keys = group_dict["filler"]
+    default = {item: 50 for item in group_dict["filler"]}
 
+class TrapWeights(ItemWeights):
+    """Choose the odds of each trap item being created when filling the item pool with traps."""
+    display_name = "Trap Item Weights"
+    valid_keys = group_dict["trap"]
+    default = {item: 50 for item in group_dict["trap"]}
 
-class RankRewards(Choice):
-    """Which ranks give item rewards.
-    Options:
-    C: Clear
-    S: Superb
-    P: Perfect
-    CS, CP, SP, CSP = combinations"""
-    display_name = "Rank Reward Type"
-    option_C = 0
-    option_S = 1
-    option_P = 2
-    option_CS = 3
-    option_CP = 4
-    option_SP = 5
-    option_CSP = 6
-    default = 3  # CS
+class RTDeathLink(DeathLink):
+    """
+    When you fail a level (TRY AGAIN), everyone dies. The reverse is also true.
 
-
-# TODO: Add TrapOptions, DeathLink options when implemented
-
-
-RHYTHM_TENGOKU_OPTION_DEFINITIONS = {
-    "progression_balancing": ProgressionBalancing,
-    "accessibility": Accessibility,
-    "goal": GoalType,
-    "goal_levels": GoalLevels,
-    "excluded_levels": ExcludedLevels,
-    "start_level": StartLevel,
-    "rank_rewards": RankRewards,
-}
+    Death in this game simply exits the level.
+    """
 
 @dataclass
-class RhythmTengokuOptions(OptionDict):
-    progression_balancing: ProgressionBalancing
-    accessibility: Accessibility
-    goal: GoalType
+class RTOptions(PerGameCommonOptions):
+    starting_levels: StartingLevels
     goal_levels: GoalLevels
-    excluded_levels: ExcludedLevels
-    start_level: StartLevel
-    rank_rewards: RankRewards
+    goal_rank: GoalRank
+    skipped_levels: SkipLevels
+    ok_rewards: OkRewards
+    superb_rewards: SuperbRewards
+    perfect_rewards: PerfectRewards
+    trap_percent: TrapPercent
+    filler_weights: FillerWeights
+    trap_weights: TrapWeights
+    death_link: RTDeathLink
+    

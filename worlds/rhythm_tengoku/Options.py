@@ -33,9 +33,9 @@ class GoalRank(Choice):
     Rank required on all goal levels in order to complete goal.
     """
     display_name = "Goal Rank"
-    option_ok_all_goals = 0
-    option_superb_all_goals = 1
-    option_perfect_all_goals = 2
+    option_ok = 0
+    option_superb = 1
+    option_perfect = 2
     default = 1
 
 class SkipLevels(OptionSet):

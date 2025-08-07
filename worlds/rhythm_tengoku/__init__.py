@@ -162,7 +162,7 @@ class RhythmTengokuWorld(World):
             trophy: Location = self.get_location("Cleared " + goal_level)
             trophy.place_locked_item(self.create_event("Trophy - " + goal_level))
         
-        multiworld.completion_condition[player] = lambda state: state.has_all([f"Trophy - {goal_level}" for goal_level in self.options.goal_levels.value])
+        multiworld.completion_condition[player] = lambda state: state.has_all([f"Trophy - {goal_level}" for goal_level in self.options.goal_levels.value], player)
 
     def fill_slot_data(self) -> Dict[str, Any]:
         slot_data: Dict[str, Any] = {

@@ -7,6 +7,7 @@ from .Locations import LocationType, location_list
 from .Regions import Regions
 from .Rules import RhythmTengokuRules
 from .Options import RhythmTengokuOptions
+from .client import RhythmTengokuClient
 
 class RhythmTengokuWorld(World):
     """The first Rhythm Heaven game"""
@@ -183,3 +184,5 @@ class RhythmTengokuItem(Item):
 
 class RhythmTengokuLocation(Location):
     game: str = "Rhythm Tengoku"
+
+bizhawk_client_class = RhythmTengokuClient

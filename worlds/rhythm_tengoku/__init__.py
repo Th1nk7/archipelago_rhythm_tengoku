@@ -170,12 +170,18 @@ class RhythmTengokuWorld(World):
             "locations": self.game_id_to_long,
             "starting_levels": self.options.starting_levels.value,
             "goal_levels": self.options.goal_levels.value,
-            "goal_rank": self.options.goal_rank.value,
+            "goal_type": self.options.goal_rank.value,
             "skipped_levels": self.options.skipped_levels.value,
             "ok_rewards": bool(self.options.ok_rewards),
             "superb_rewards": bool(self.options.superb_rewards),
             "perfect_rewards": bool(self.options.perfect_rewards),
             "death_link": bool(self.options.death_link),
+            #### MIGHT NEED FIX ####
+            "item_id_to_name": {
+                (iid - self.base_id): name
+                for name, iid in self.item_name_to_id.items()
+            },
+            #### ------------- #####
         }
         return slot_data
 
